@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" minWidth="955" minHeight="600"
+			   creationComplete="application1_creationCompleteHandler(event)">
+	<s:layout>
+		<s:HorizontalLayout/>
+	</s:layout>
+	
+	<fx:Script>
+		<![CDATA[
+			protected function stop_clickHandler(event:MouseEvent):void {
+				if (outStream)
+					outStream.close();
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			
+			// connection settings
+			private var connection:NetConnection;
+			private var serverUri:String = "rtmp://localhost/oflaDemo";
+			private var streamName:String = "First";
+			// outcoming stream
+			private var outStream:NetStream;
+			private var outVideo:Video;
+			// incoming stream
+			private var inStream:NetStream;
+			private var inVideo:Video;
+			// device
+			private var camera:Camera;
+			private var mic:Microphone;
+			// wrappers
+			private var outWrapper:UIComponent;
+			private var inWrapper:UIComponent;
+			
+			public function onBWCheck(obj:Object):void{
+				
+			}
+			
+			public function onBWDone(obj:Object):void{
+				
+			}
+			
+		    protected function application1_creationCompleteHandler(event:FlexEvent):void {
+				connection = new NetConnection;
+				connection.connect(serverUri);
+				connection.client = this;
+				connection.addEventListener(NetStatusEvent.NET_STATUS, onNetStatus);
+			}
+			
+			protected function onNetStatus(event:NetStatusEvent):void {
+				trace(event.info.code);
+				setCameraView();
+				/* if (event.info.code == "NetConnection.Connect.Success") {
+					setStream();	
+				} */
+			}
+			
+			protected function setCameraView():void {
+				inVideo = new Video;
+				camera = Camera.getCamera();
+				inVideo.attachCamera(camera);
+				inWrapper = new UIComponent;
+				inWrapper.addChild(inVideo);
+				addElement(inWrapper);
+			}
+			
+			protected function setStream():void {
+				// outgoing stream
+				outStream = new NetStream(connection);
+				outStream.addEventListener(NetStatusEvent.NET_STATUS, onNetStatus);
+				mic = Microphone.getMicrophone();
+				camera = Camera.getCamera();
+				camera.setMode(360, 240, 15);
+				// best quality
+				camera.setQuality(0, 100);
+				
+				outStream.attachAudio(mic);
+				outStream.attachCamera(camera);
+				// yet commited because of delay (near 1 sec on Red5)
+				//var videoStreamSettings:H264VideoStreamSettings = new H264VideoStreamSettings;
+				/* videoStreamSettings.setMode(960, 720, 30);
+				videoStreamSettings.setQuality(0, 100);
+				videoStreamSettings.setProfileLevel(H264Profile.MAIN, H264Level.LEVEL_3_1); */
+				//outStream.videoStreamSettings = videoStreamSettings;
+				streamName = streamName + Math.random();
+				outStream.publish(streamName, "record");
+				//outVideo = new Video;
+				//outVideo.attachCamera(camera);
+				
+				// income stream
+				/* inStream = new NetStream(connection);
+				inStream.play(streamName);
+				inVideo = new Video;
+				inVideo.attachNetStream(inStream); */
+				
+				// wrappers
+				/* outWrapper = new UIComponent;
+				outWrapper.addChild(outVideo); */
+				//inWrapper = new UIComponent;
+				//inWrapper.addChild(inVideo);
+				//addElement(outWrapper);
+				//addElement(inWrapper);
+			}
+		]]>
+	</fx:Script>
+	<s:Button id="stop" label="Stop" click="stop_clickHandler(event)"/>
+</s:Application>
